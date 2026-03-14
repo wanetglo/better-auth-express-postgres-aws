@@ -1,22 +1,22 @@
-import { betterAuth } from "better-auth";
-import { bearer, emailOTP } from "better-auth/plugins";
 import { Role, UserStatus } from "@prisma/client";
-import { envVars } from "../config/env";
-import { sendEmail } from "../shared/utils/email";
-import { prisma } from "../database/prisma";
+import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { bearer, emailOTP } from "better-auth/plugins";
+import { envVars } from "../config/env";
+import { prisma } from "../database/prisma";
+import { sendEmail } from "../shared/utils/email";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
 
-  baseURL: envVars.BETTER_AUTH_URL,
-  secret: envVars.BETTER_AUTH_SECRET,
+  baseURL: envVars.BETTER_AUTH_URL as string,
+  secret: envVars.BETTER_AUTH_SECRET as string,
   trustedOrigins: [
     envVars.APP_URL!,
     envVars.FRONTEND_URL!,
-     envVars.BETTER_AUTH_URL!,
+    envVars.BETTER_AUTH_URL!,
     "http://localhost:3000",
   ],
   emailAndPassword: {
@@ -81,13 +81,11 @@ export const auth = betterAuth({
       overrideDefaultEmailVerification: true,
       async sendVerificationOTP({ email, otp, type }) {
         if (type === "email-verification") {
-                    const user = await prisma.user.findUnique({
+          const user = await prisma.user.findUnique({
             where: {
               email,
             },
           });
-          
-          
 
           if (!user) {
             console.error(
@@ -103,19 +101,17 @@ export const auth = betterAuth({
               templateName: "otp",
               templateData: {
                 userName: user.name,
-                appName: envVars.APP_NAME,
+                appName: envVars.APP_NAME as string,
                 otp,
               },
             });
           }
         } else if (type === "forget-password") {
-                    const user = await prisma.user.findUnique({
+          const user = await prisma.user.findUnique({
             where: {
               email,
             },
           });
-          
-          
 
           if (user) {
             sendEmail({
@@ -124,7 +120,7 @@ export const auth = betterAuth({
               templateName: "otp",
               templateData: {
                 userName: user.name,
-                appName: envVars.APP_NAME,
+                appName: envVars.APP_NAME as string,
                 otp,
               },
             });

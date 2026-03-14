@@ -72,7 +72,6 @@ const loadEnvVars = (): EnvConfig => {
   });
 
   return {
-    
     DATABASE_URL: process.env.DATABASE_URL as string,
     FRONTEND_URL: process.env.FRONTEND_URL as string,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL as string,
@@ -87,7 +86,7 @@ const loadEnvVars = (): EnvConfig => {
       SMTP_PORT: process.env.EMAIL_SENDER_SMTP_PORT as string,
       SMTP_FROM: process.env.EMAIL_SENDER_SMTP_FROM as string,
     },
-        APP_NAME: process.env.APP_NAME ?? "Your App",
+    APP_NAME: process.env.APP_NAME || "Your App",
     APP_URL: process.env.APP_URL as string,
     NODE_ENV: process.env.NODE_ENV as string,
     PORT: process.env.PORT as string,
@@ -99,7 +98,6 @@ const loadEnvVars = (): EnvConfig => {
     ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN as string,
     REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET as string,
     REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN as string,
-    
   };
 };
 

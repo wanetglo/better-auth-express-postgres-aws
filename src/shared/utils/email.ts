@@ -1,6 +1,6 @@
-import nodemailer from "nodemailer";
 import ejs from "ejs";
 import status from "http-status";
+import nodemailer from "nodemailer";
 import path from "path";
 import { envVars } from "../../config/env";
 import { AppError } from "../errors/app-error";
@@ -37,7 +37,7 @@ export const sendEmail = async ({
   attachments,
 }: SendEmailOptions) => {
   try {
-         const templatePath = path.resolve(
+    const templatePath = path.resolve(
       process.cwd(),
       `src/templates/${templateName}.ejs`,
     );
@@ -51,15 +51,13 @@ export const sendEmail = async ({
 
     const templateDataWithDefaults: Record<string, unknown> = {
       appName: envVars.APP_NAME ?? "Your App",
-      supportEmail: envVars.SUPER_ADMIN_EMAIL ?? "support@example.com",
+      supportEmail: envVars.EMAIL_SENDER.SMTP_FROM ?? "support@example.com",
       year: new Date().getFullYear(),
       expiresInMinutes,
       ...td,
     };
 
     const html = await ejs.renderFile(templatePath, templateDataWithDefaults);
-    
-    
 
     await transporter.sendMail({
       from: envVars.EMAIL_SENDER.SMTP_FROM,
@@ -73,7 +71,9 @@ export const sendEmail = async ({
       })),
     });
   } catch {
-        throw new AppError(status.INTERNAL_SERVER_ERROR, `Failed to send email to ${to}`);
-    
+    throw new AppError(
+      status.INTERNAL_SERVER_ERROR,
+      `Failed to send email to ${to}`,
+    );
   }
 };
