@@ -8,7 +8,6 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 interface EnvConfig {
   APP_NAME?: string;
   APP_URL: string;
-  
   DATABASE_URL: string;
   FRONTEND_URL: string;
   BETTER_AUTH_URL: string;
@@ -23,7 +22,7 @@ interface EnvConfig {
     SMTP_PORT: string;
     SMTP_FROM: string;
   };
-    NODE_ENV: string;
+  NODE_ENV: string;
   PORT: string;
   BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN: string;
   BETTER_AUTH_SESSION_TOKEN_UPDATE_AGE: string;
@@ -31,13 +30,23 @@ interface EnvConfig {
   ACCESS_TOKEN_EXPIRES_IN: string;
   REFRESH_TOKEN_SECRET: string;
   REFRESH_TOKEN_EXPIRES_IN: string;
-  
+  S3: {
+    ENDPOINT: string;
+    REGION: string;
+    ACCESS_KEY_ID: string;
+    SECRET_ACCESS_KEY: string;
+    BUCKET_NAME: string;
+  };
+  IMGPROXY: {
+    BASE_URL: string;
+    SECRET_KEY: string;
+    SALT: string;
+  };
 }
 
 const loadEnvVars = (): EnvConfig => {
   const requiredEnvVars = [
     "APP_URL",
-    
     "DATABASE_URL",
     "FRONTEND_URL",
     "BETTER_AUTH_URL",
@@ -50,7 +59,7 @@ const loadEnvVars = (): EnvConfig => {
     "EMAIL_SENDER_SMTP_HOST",
     "EMAIL_SENDER_SMTP_PORT",
     "EMAIL_SENDER_SMTP_FROM",
-        "NODE_ENV",
+    "NODE_ENV",
     "PORT",
     "BETTER_AUTH_SESSION_TOKEN_EXPIRES_IN",
     "BETTER_AUTH_SESSION_TOKEN_UPDATE_AGE",
@@ -58,7 +67,14 @@ const loadEnvVars = (): EnvConfig => {
     "ACCESS_TOKEN_EXPIRES_IN",
     "REFRESH_TOKEN_SECRET",
     "REFRESH_TOKEN_EXPIRES_IN",
-    
+    "S3_ENDPOINT",
+    "S3_REGION",
+    "S3_ACCESS_KEY_ID",
+    "S3_SECRET_ACCESS_KEY",
+    "S3_BUCKET_NAME",
+    "IMGPROXY_BASE_URL",
+    "IMGPROXY_SECRET_KEY",
+    "IMGPROXY_SALT",
   ];
 
   requiredEnvVars.forEach((varName) => {
@@ -98,6 +114,18 @@ const loadEnvVars = (): EnvConfig => {
     ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN as string,
     REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET as string,
     REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN as string,
+    S3: {
+      ENDPOINT: process.env.S3_ENDPOINT as string,
+      REGION: process.env.S3_REGION as string,
+      ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID as string,
+      SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY as string,
+      BUCKET_NAME: process.env.S3_BUCKET_NAME as string,
+    },
+    IMGPROXY: {
+      BASE_URL: process.env.IMGPROXY_BASE_URL as string,
+      SECRET_KEY: process.env.IMGPROXY_SECRET_KEY as string,
+      SALT: process.env.IMGPROXY_SALT as string,
+    },
   };
 };
 

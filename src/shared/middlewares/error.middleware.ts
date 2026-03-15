@@ -1,8 +1,10 @@
-import { ErrorRequestHandler } from "express";
+import { ErrorRequestHandler, Request, Response } from "express";
 import status from "http-status";
+import z from "zod";
 import { envVars } from "../../config/env";
 import ApiError from "../errors/api-error";
 import { AppError } from "../errors/app-error";
+import { handleZodError } from "../errors/zod-error";
 
 type ErrorSource = {
   path: string;
@@ -14,6 +16,7 @@ type ErrorResponse = {
   message: string;
   errorSources: ErrorSource[];
   stack?: string;
+  timestamp?: string;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -23,7 +26,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 const toErrorSource = (value: unknown): ErrorSource | null => {
   if (!isRecord(value)) return null;
 
-  const message = typeof value.message === "string" ? value.message : "Unknown error";
+  const message =
+    typeof value.message === "string" ? value.message : "Unknown error";
   const path =
     typeof value.path === "string"
       ? value.path
@@ -63,27 +67,11 @@ const isJsonParseError = (value: unknown): value is SyntaxError => {
   return "body" in value;
 };
 
-const isZodLikeError = (
-  value: unknown,
-): value is {
-  issues: Array<{ path: Array<string | number>; message: string }>;
-  stack?: string;
-} => {
-  if (!isRecord(value)) return false;
-  if (!Array.isArray(value.issues)) return false;
-
-  return value.issues.every((issue) => {
-    if (!isRecord(issue)) return false;
-    if (!Array.isArray(issue.path)) return false;
-    if (typeof issue.message !== "string") return false;
-
-    return issue.path.every(
-      (segment) => typeof segment === "string" || typeof segment === "number",
-    );
-  });
-};
-
-const errorHandler: ErrorRequestHandler = (err, _req, res) => {
+const errorHandler: ErrorRequestHandler = async (
+  err: unknown,
+  req: Request,
+  res: Response,
+) => {
   const isDevelopment = envVars.NODE_ENV === "development";
 
   if (isDevelopment) {
@@ -95,13 +83,11 @@ const errorHandler: ErrorRequestHandler = (err, _req, res) => {
   let message = "Internal Server Error";
   let stack: string | undefined;
 
-  if (isZodLikeError(err)) {
-    statusCode = status.BAD_REQUEST;
-    message = "Validation Error";
-    errorSources = err.issues.map((issue) => ({
-      path: issue.path.join("."),
-      message: issue.message,
-    }));
+  if (err instanceof z.ZodError) {
+    const zodResp = handleZodError(err);
+    statusCode = zodResp.statusCode ?? status.BAD_REQUEST;
+    message = zodResp.message;
+    errorSources = zodResp.errorSources;
     stack = err.stack;
   } else if (err instanceof AppError || err instanceof ApiError) {
     statusCode = err.statusCode;
@@ -144,17 +130,36 @@ const errorHandler: ErrorRequestHandler = (err, _req, res) => {
       });
     }
 
-    errorSources = sources.length > 0 ? sources : [{ path: "", message: String(message) }];
+    errorSources =
+      sources.length > 0 ? sources : [{ path: "", message: String(message) }];
   }
+
+  // normalize and deduplicate error sources; ensure at least one source
+  if (!Array.isArray(errorSources) || errorSources.length === 0) {
+    errorSources = [{ path: "", message: String(message) }];
+  }
+
+  const seen = new Set<string>();
+  errorSources = errorSources
+    .map((s) => ({ path: s.path || "", message: s.message || "" }))
+    .filter((s) => {
+      const key = `${s.path}|${s.message}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
   const errorResponse: ErrorResponse = {
     success: false,
     message,
     errorSources,
     stack: isDevelopment ? stack : undefined,
+    timestamp: new Date().toISOString(),
   };
 
+  // ensure JSON content type and send response
+  res.type("application/json");
   res.status(statusCode).json(errorResponse);
-};
+};;
 
 export const globalErrorHandler = errorHandler;
